@@ -122,7 +122,7 @@ const BookDetails = () => {
     };
 
     const handlePreview = () => {
-        window.open(`http://localhost:5000/api/books/preview/${book._id}`, '_blank');
+        window.open(`/api/books/preview/${book._id}`, '_blank');
     };
 
     if (loading) return (
@@ -135,7 +135,7 @@ const BookDetails = () => {
     const getImageUrl = (path) => {
         if (!path) return '';
         if (path.startsWith('http')) return path;
-        return `http://localhost:5000/${path.replace(/\\/g, '/')}`;
+        return `/${path.replace(/\\/g, '/')}`;
     };
 
     return (

@@ -33,4 +33,10 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/it-skillhub
         }
     });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Export for Vercel
+module.exports = app;
+
+// Only listen if running directly (not imported as a module)
+if (require.main === module) {
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
