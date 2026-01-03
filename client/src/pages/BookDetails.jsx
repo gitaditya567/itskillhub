@@ -21,7 +21,7 @@ const BookDetails = () => {
                 setBook(data);
 
                 if (user) {
-                    if (user.isAdmin || user.purchasedBooks?.includes(data._id)) {
+                    if (user.role === 'admin' || user.purchasedBooks?.includes(data._id)) {
                         setIsPurchased(true);
                     }
                 }

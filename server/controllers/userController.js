@@ -16,7 +16,7 @@ const downloadBook = async (req, res) => {
 
         // Check if user purchased the book or is admin
         const hasPurchased = req.user.purchasedBooks.some(id => id.toString() === book._id.toString());
-        if (!hasPurchased && !req.user.isAdmin) {
+        if (!hasPurchased && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'You have not purchased this book' });
         }
 
