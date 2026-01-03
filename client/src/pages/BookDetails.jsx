@@ -21,11 +21,9 @@ const BookDetails = () => {
                 setBook(data);
 
                 if (user) {
-                    // Get fresh user profile to check purchasedBooks
-                    const { data: userData } = await axios.get('/api/users/profile', {
-                        headers: { Authorization: `Bearer ${user.token}` }
-                    });
-                    setIsPurchased(userData.purchasedBooks.includes(id) || user.role === 'admin');
+                    if (user.isAdmin || user.purchasedBooks?.includes(data._id)) {
+                        setIsPurchased(true);
+                    }
                 }
             } catch (error) {
                 console.error("Error", error);
