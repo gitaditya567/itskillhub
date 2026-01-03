@@ -88,8 +88,8 @@ const BookDetails = () => {
 
                         toast.dismiss(loadingToast);
                         toast.success(result.data.message || 'Payment Successful!');
-                        setIsPurchased(true); // Show download button immediately
-                        // navigate('/dashboard'); // Optional: stay on page to download
+                        setIsPurchased(true);
+                        navigate('/dashboard');
                     } catch (error) {
                         console.error(error);
                         toast.dismiss(loadingToast);

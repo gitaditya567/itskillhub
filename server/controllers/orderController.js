@@ -76,7 +76,10 @@ const verifyOrder = async (req, res) => {
 
                 // Add book to user's purchasedBooks
                 const user = await User.findById(req.user._id);
-                if (user.purchasedBooks.indexOf(order.book) === -1) {
+                // Check if book already exists (using string comparison for ObjectIds)
+                const alreadyPurchased = user.purchasedBooks.some(id => id.toString() === order.book.toString());
+
+                if (!alreadyPurchased) {
                     user.purchasedBooks.push(order.book);
                     await user.save();
                 }
