@@ -22,7 +22,9 @@ const Home = () => {
     const getImageUrl = (path) => {
         if (!path) return '';
         if (path.startsWith('http')) return path;
-        return `/${path.replace(/\\/g, '/')}`;
+        const baseUrl = 'https://itskillhub.onrender.com';
+        const cleanPath = path.replace(/\\/g, '/').replace(/^\//, '');
+        return `${baseUrl}/${cleanPath}`;
     };
 
     const container = {

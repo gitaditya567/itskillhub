@@ -41,13 +41,25 @@ const createBook = async (req, res) => {
         // Files are in req.files (using multers fields) or req.file
         // We expect coverImage and pdf
 
-        // Validating basic existence
-        if (!req.files || !req.files.coverImage || !req.files.pdf) {
-            return res.status(400).json({ message: 'Please upload both cover image and PDF' });
+        let coverImage = '';
+        let pdfUrl = '';
+
+        if (req.files && req.files.coverImage) {
+            coverImage = req.files.coverImage[0].path;
+        } else if (req.body.coverImageUrl) {
+            coverImage = req.body.coverImageUrl;
         }
 
-        const coverImage = req.files.coverImage[0].path;
-        const pdfUrl = req.files.pdf[0].path;
+        if (req.files && req.files.pdf) {
+            pdfUrl = req.files.pdf[0].path;
+        } else if (req.body.pdfLink) {
+            pdfUrl = req.body.pdfLink;
+        }
+
+        // Validating basic existence
+        if (!coverImage || !pdfUrl) {
+            return res.status(400).json({ message: 'Please provide both cover image and PDF (via upload or link)' });
+        }
 
         const book = new Book({
             title,
@@ -166,19 +178,31 @@ const updateBook = async (req, res) => {
         book.previewPages = previewPages || book.previewPages;
 
         if (req.files && req.files.coverImage) {
-            // Delete old cover
-            if (book.coverImage && fs.existsSync(book.coverImage)) {
+            // Delete old cover if it was local
+            if (book.coverImage && !book.coverImage.startsWith('http') && fs.existsSync(book.coverImage)) {
                 fs.unlinkSync(book.coverImage);
             }
             book.coverImage = req.files.coverImage[0].path;
+        } else if (req.body.coverImageUrl) {
+            // Delete old cover if it was local
+            if (book.coverImage && !book.coverImage.startsWith('http') && fs.existsSync(book.coverImage)) {
+                fs.unlinkSync(book.coverImage);
+            }
+            book.coverImage = req.body.coverImageUrl;
         }
 
         if (req.files && req.files.pdf) {
-            // Delete old PDF
-            if (book.pdfUrl && fs.existsSync(book.pdfUrl)) {
+            // Delete old PDF if it was local
+            if (book.pdfUrl && !book.pdfUrl.startsWith('http') && fs.existsSync(book.pdfUrl)) {
                 fs.unlinkSync(book.pdfUrl);
             }
             book.pdfUrl = req.files.pdf[0].path;
+        } else if (req.body.pdfLink) {
+            // Delete old PDF if it was local
+            if (book.pdfUrl && !book.pdfUrl.startsWith('http') && fs.existsSync(book.pdfUrl)) {
+                fs.unlinkSync(book.pdfUrl);
+            }
+            book.pdfUrl = req.body.pdfLink;
         }
 
         const updatedBook = await book.save();

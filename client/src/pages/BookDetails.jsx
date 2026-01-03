@@ -121,21 +121,19 @@ const BookDetails = () => {
         }
     };
 
-    const handlePreview = () => {
-        window.open(`/api/books/preview/${book._id}`, '_blank');
-    };
-
-    if (loading) return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-50">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
-        </div>
-    );
-    if (!book) return <div className="text-center py-20 text-gray-500">Book not found</div>;
-
     const getImageUrl = (path) => {
         if (!path) return '';
         if (path.startsWith('http')) return path;
-        return `/${path.replace(/\\/g, '/')}`;
+        // Prepend the backed URL to the path
+        const baseUrl = 'https://itskillhub.onrender.com';
+        // Remove leading slash if present to avoid double slashes
+        const cleanPath = path.replace(/\\/g, '/').replace(/^\//, '');
+        return `${baseUrl}/${cleanPath}`;
+    };
+
+    const handlePreview = () => {
+        const baseUrl = 'https://itskillhub.onrender.com';
+        window.open(`${baseUrl}/api/books/preview/${book._id}`, '_blank');
     };
 
     return (

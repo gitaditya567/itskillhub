@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import AuthContext from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
-import { FiEdit2, FiTrash2, FiX, FiUploadCloud, FiFileText, FiImage } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiX, FiUploadCloud, FiFileText, FiImage, FiLink } from 'react-icons/fi';
 
 const AdminDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -12,10 +12,14 @@ const AdminDashboard = () => {
         description: '',
         price: '',
         previewPages: 2,
+        coverImageUrl: '',
+        pdfLink: ''
     });
     const [coverImage, setCoverImage] = useState(null);
     const [pdf, setPdf] = useState(null);
     const [editingId, setEditingId] = useState(null);
+    const [useExternalCover, setUseExternalCover] = useState(false);
+    const [useExternalPdf, setUseExternalPdf] = useState(false);
 
     const fetchBooks = async () => {
         try {
@@ -42,13 +46,21 @@ const AdminDashboard = () => {
 
     const handleEdit = (book) => {
         setEditingId(book._id);
+        const isCoverUrl = book.coverImage && book.coverImage.startsWith('http');
+        const isPdfUrl = book.pdfUrl && book.pdfUrl.startsWith('http');
+
+        setUseExternalCover(isCoverUrl);
+        setUseExternalPdf(isPdfUrl);
+
         setFormData({
             title: book.title,
             description: book.description,
             price: book.price,
             previewPages: book.previewPages || 2,
+            coverImageUrl: isCoverUrl ? book.coverImage : '',
+            pdfLink: isPdfUrl ? book.pdfUrl : ''
         });
-        // We don't pre-fill files as they are protected/hidden, user must re-upload if they want to change
+
         setCoverImage(null);
         setPdf(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -56,9 +68,11 @@ const AdminDashboard = () => {
 
     const cancelEdit = () => {
         setEditingId(null);
-        setFormData({ title: '', description: '', price: '', previewPages: 2 });
+        setFormData({ title: '', description: '', price: '', previewPages: 2, coverImageUrl: '', pdfLink: '' });
         setCoverImage(null);
         setPdf(null);
+        setUseExternalCover(false);
+        setUseExternalPdf(false);
     };
 
     const handleDelete = async (id) => {
@@ -91,8 +105,19 @@ const AdminDashboard = () => {
             data.append('description', formData.description);
             data.append('price', formData.price);
             data.append('previewPages', formData.previewPages);
-            if (coverImage) data.append('coverImage', coverImage);
-            if (pdf) data.append('pdf', pdf);
+
+            if (useExternalCover && formData.coverImageUrl) {
+                data.append('coverImageUrl', formData.coverImageUrl);
+            } else if (coverImage) {
+                data.append('coverImage', coverImage);
+            }
+
+            if (useExternalPdf && formData.pdfLink) {
+                data.append('pdfLink', formData.pdfLink);
+            } else if (pdf) {
+                data.append('pdf', pdf);
+            }
+
 
             try {
                 const config = {
@@ -120,8 +145,18 @@ const AdminDashboard = () => {
             data.append('description', formData.description);
             data.append('price', formData.price);
             data.append('previewPages', formData.previewPages);
-            data.append('coverImage', coverImage);
-            data.append('pdf', pdf);
+
+            if (useExternalCover && formData.coverImageUrl) {
+                data.append('coverImageUrl', formData.coverImageUrl);
+            } else if (coverImage) {
+                data.append('coverImage', coverImage);
+            }
+
+            if (useExternalPdf && formData.pdfLink) {
+                data.append('pdfLink', formData.pdfLink);
+            } else if (pdf) {
+                data.append('pdf', pdf);
+            }
 
             try {
                 const config = {
@@ -188,20 +223,81 @@ const AdminDashboard = () => {
                                 <textarea name="description" placeholder="Book details..." value={formData.description} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition" rows="4" required></textarea>
                             </div>
 
-                            <div className="space-y-3 pt-2 border-t border-dashed border-gray-200">
-                                <div className="relative">
-                                    <label className="flex items-center gap-2 w-full p-3 bg-indigo-50 text-indigo-700 rounded-lg cursor-pointer hover:bg-indigo-100 transition border border-indigo-200">
-                                        <FiImage className="text-xl" />
-                                        <span className="text-sm font-semibold truncate">{coverImage ? coverImage.name : (editingId ? "Change Cover (Optional)" : "Select Cover Image")}</span>
-                                        <input type="file" name="coverImage" onChange={handleFileChange} className="hidden" accept="image/*" required={!editingId} />
-                                    </label>
+                            <div className="space-y-4 pt-4 border-t border-dashed border-gray-200">
+                                {/* Cover Image Section */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase">Cover Image</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setUseExternalCover(!useExternalCover)}
+                                            className="text-indigo-600 text-xs font-bold hover:underline"
+                                        >
+                                            {useExternalCover ? "Switch to Upload" : "Use External Link"}
+                                        </button>
+                                    </div>
+
+                                    {useExternalCover ? (
+                                        <div className="relative">
+                                            <FiLink className="absolute left-3 top-3 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                name="coverImageUrl"
+                                                placeholder="https://drive.google.com/..."
+                                                value={formData.coverImageUrl || ''}
+                                                onChange={handleChange}
+                                                className="w-full bg-gray-50 border border-gray-200 pl-10 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition text-sm"
+                                                required={!editingId && !coverImage}
+                                            />
+                                            <p className="text-[10px] text-gray-400 mt-1">Use a direct link (e.g. Cloudinary, Imgur, or direct Drive link)</p>
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <label className="flex items-center gap-2 w-full p-3 bg-indigo-50 text-indigo-700 rounded-lg cursor-pointer hover:bg-indigo-100 transition border border-indigo-200">
+                                                <FiImage className="text-xl" />
+                                                <span className="text-sm font-semibold truncate">{coverImage ? coverImage.name : (editingId && !useExternalCover ? "Change Cover (Optional)" : "Select Cover Image")}</span>
+                                                <input type="file" name="coverImage" onChange={handleFileChange} className="hidden" accept="image/*" required={!editingId && !formData.coverImageUrl} />
+                                            </label>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="relative">
-                                    <label className="flex items-center gap-2 w-full p-3 bg-red-50 text-red-700 rounded-lg cursor-pointer hover:bg-red-100 transition border border-red-200">
-                                        <FiFileText className="text-xl" />
-                                        <span className="text-sm font-semibold truncate">{pdf ? pdf.name : (editingId ? "Change PDF (Optional)" : "Select PDF File")}</span>
-                                        <input type="file" name="pdf" onChange={handleFileChange} className="hidden" accept="application/pdf" required={!editingId} />
-                                    </label>
+
+                                {/* PDF Section */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase">Book PDF</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setUseExternalPdf(!useExternalPdf)}
+                                            className="text-indigo-600 text-xs font-bold hover:underline"
+                                        >
+                                            {useExternalPdf ? "Switch to Upload" : "Use External Link"}
+                                        </button>
+                                    </div>
+
+                                    {useExternalPdf ? (
+                                        <div className="relative">
+                                            <FiLink className="absolute left-3 top-3 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                name="pdfLink"
+                                                placeholder="https://drive.google.com/..."
+                                                value={formData.pdfLink || ''}
+                                                onChange={handleChange}
+                                                className="w-full bg-gray-50 border border-gray-200 pl-10 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition text-sm"
+                                                required={!editingId && !pdf}
+                                            />
+                                            <p className="text-[10px] text-gray-400 mt-1">Use a direct downloadable link (e.g. Drive 'Export' link)</p>
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <label className="flex items-center gap-2 w-full p-3 bg-red-50 text-red-700 rounded-lg cursor-pointer hover:bg-red-100 transition border border-red-200">
+                                                <FiFileText className="text-xl" />
+                                                <span className="text-sm font-semibold truncate">{pdf ? pdf.name : (editingId && !useExternalPdf ? "Change PDF (Optional)" : "Select PDF File")}</span>
+                                                <input type="file" name="pdf" onChange={handleFileChange} className="hidden" accept="application/pdf" required={!editingId && !formData.pdfLink} />
+                                            </label>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
