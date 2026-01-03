@@ -137,6 +137,24 @@ const BookDetails = () => {
         window.open(url, '_blank');
     };
 
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+            </div>
+        );
+    }
+
+    if (!book) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center text-center p-6">
+                <h2 className="text-3xl font-bold text-gray-800 mb-4">Book Not Found</h2>
+                <p className="text-gray-600 mb-8">The book you are looking for does not exist or has been removed.</p>
+                <button onClick={() => navigate('/')} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Go Home</button>
+            </div>
+        );
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -210,7 +228,9 @@ const BookDetails = () => {
                 </div>
             </div>
         </motion.div>
-    );
+    )
+
+
 };
 
 export default BookDetails;
