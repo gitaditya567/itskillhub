@@ -21,8 +21,21 @@ const BookDetails = () => {
                 setBook(data);
 
                 if (user) {
+                    // Check context first (optimistic)
                     if (user.role === 'admin' || user.purchasedBooks?.includes(data._id)) {
                         setIsPurchased(true);
+                    }
+
+                    // Fetch fresh user data to ensure purchasedBooks is up-to-date
+                    try {
+                        const { data: freshUser } = await axios.get('/api/auth/me', {
+                            headers: { Authorization: `Bearer ${user.token}` }
+                        });
+                        if (freshUser.role === 'admin' || freshUser.purchasedBooks?.includes(data._id)) {
+                            setIsPurchased(true);
+                        }
+                    } catch (err) {
+                        console.error('Failed to refresh user data', err);
                     }
                 }
             } catch (error) {
