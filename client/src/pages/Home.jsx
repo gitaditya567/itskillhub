@@ -22,9 +22,10 @@ const Home = () => {
     const getImageUrl = (path) => {
         if (!path) return '';
         if (path.startsWith('http')) return path;
-        const baseUrl = 'https://itskillhub.onrender.com';
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
         const cleanPath = path.replace(/\\/g, '/').replace(/^\//, '');
-        return `${baseUrl}/${cleanPath}`;
+        // Join with / but avoid double slashes if baseUrl is empty
+        return baseUrl ? `${baseUrl}/${cleanPath}` : `/${cleanPath}`;
     };
 
     const container = {

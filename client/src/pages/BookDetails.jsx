@@ -125,15 +125,16 @@ const BookDetails = () => {
         if (!path) return '';
         if (path.startsWith('http')) return path;
         // Prepend the backed URL to the path
-        const baseUrl = 'https://itskillhub.onrender.com';
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
         // Remove leading slash if present to avoid double slashes
         const cleanPath = path.replace(/\\/g, '/').replace(/^\//, '');
-        return `${baseUrl}/${cleanPath}`;
+        return baseUrl ? `${baseUrl}/${cleanPath}` : `/${cleanPath}`;
     };
 
     const handlePreview = () => {
-        const baseUrl = 'https://itskillhub.onrender.com';
-        window.open(`${baseUrl}/api/books/preview/${book._id}`, '_blank');
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        const url = baseUrl ? `${baseUrl}/api/books/preview/${book._id}` : `/api/books/preview/${book._id}`;
+        window.open(url, '_blank');
     };
 
     return (

@@ -5,8 +5,8 @@ import './index.css'
 import axios from 'axios'
 
 // Set the base URL for axios requests
-// Hardcoded for reliability during deployment debugging
-axios.defaults.baseURL = 'https://itskillhub.onrender.com';
+// Use environment variable or default to relative path (for proxy)
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || '';
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(

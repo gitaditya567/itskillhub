@@ -1,39 +1,31 @@
 const multer = require('multer');
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const dotenv = require('dotenv');
 
-const fs = require('fs');
+dotenv.config();
 
-const storage = multer.diskStorage({
-    destination(req, file, cb) {
-        const uploadPath = 'uploads/';
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
-        cb(null, uploadPath);
-    },
-    filename(req, file, cb) {
-        cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`);
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Cloudinary Storage
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+        return {
+            folder: 'it-skillhub',
+            resource_type: 'auto', // Automatically detect image or raw (pdf)
+            allowed_formats: ['jpg', 'png', 'jpeg', 'pdf'],
+            public_id: `${file.fieldname}-${Date.now()}`,
+        };
     },
 });
 
-const checkFileType = (file, cb) => {
-    const filetypes = /jpg|jpeg|png|pdf/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
-
-    if (extname && mimetype) {
-        return cb(null, true);
-    }
-    // Allow PDF specifically if check failed above but extension is pdf
-    if (file.mimetype === 'application/pdf') {
-        return cb(null, true);
-    }
-    cb('Images and PDFs only!');
-};
-
-const upload = multer({
-    storage,
-
-});
+const upload = multer({ storage });
 
 module.exports = upload;

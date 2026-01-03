@@ -1,6 +1,7 @@
 const Book = require('../models/Book');
 const { PDFDocument } = require('pdf-lib');
 const fs = require('fs');
+const axios = require('axios'); // Added for remote file handling
 
 // Helper to convert Drive links
 const convertToDirectLink = (url, type) => {
@@ -102,13 +103,21 @@ const getPreview = async (req, res) => {
             return res.status(404).json({ message: 'Book not found' });
         }
 
-        if (!fs.existsSync(book.pdfUrl)) {
-            return res.status(404).json({ message: 'File not found' });
+        let pdfBuffer;
+
+        if (book.pdfUrl.startsWith('http')) {
+            // Fetch remote PDF
+            const response = await axios.get(book.pdfUrl, { responseType: 'arraybuffer' });
+            pdfBuffer = response.data;
+        } else {
+            // Local fallback
+            if (!fs.existsSync(book.pdfUrl)) {
+                return res.status(404).json({ message: 'File not found' });
+            }
+            pdfBuffer = fs.readFileSync(book.pdfUrl);
         }
 
-        const existingPdfBytes = fs.readFileSync(book.pdfUrl);
-        const pdfDoc = await PDFDocument.load(existingPdfBytes);
-
+        const pdfDoc = await PDFDocument.load(pdfBuffer);
         const totalPages = pdfDoc.getPageCount();
 
         // Show Cover Page (0) + 2 Content Pages = 3 Pages Total
@@ -122,7 +131,6 @@ const getPreview = async (req, res) => {
             }
         }
 
-        // Fallback for empty indices (shouldn't happen if totalPages > 0 and startPage=0)
         if (pageIndices.length === 0 && totalPages > 0) {
             pageIndices.push(0);
         }
@@ -142,7 +150,7 @@ const getPreview = async (req, res) => {
         res.send(Buffer.from(pdfBytes));
 
     } catch (error) {
-        console.error(error);
+        console.error('Preview Error:', error.message);
         res.status(500).json({ message: 'Preview generation failed' });
     }
 };
@@ -158,13 +166,14 @@ const deleteBook = async (req, res) => {
             return res.status(404).json({ message: 'Book not found' });
         }
 
-        // Delete files
-        if (book.coverImage && fs.existsSync(book.coverImage)) {
+        // Delete local files if they exist (ignore cloud URLs for now)
+        if (book.coverImage && !book.coverImage.startsWith('http') && fs.existsSync(book.coverImage)) {
             fs.unlinkSync(book.coverImage);
         }
-        if (book.pdfUrl && fs.existsSync(book.pdfUrl)) {
+        if (book.pdfUrl && !book.pdfUrl.startsWith('http') && fs.existsSync(book.pdfUrl)) {
             fs.unlinkSync(book.pdfUrl);
         }
+        // TODO: Implement Cloudinary delete using public_id if needed
 
         await book.deleteOne();
         res.json({ message: 'Book removed' });
@@ -246,11 +255,26 @@ const downloadBook = async (req, res) => {
             return res.status(403).json({ message: 'You have not purchased this book' });
         }
 
-        if (!fs.existsSync(book.pdfUrl)) {
-            return res.status(404).json({ message: 'File not found on server' });
-        }
+        if (book.pdfUrl.startsWith('http')) {
+            // Stream remote file to client
+            const response = await axios({
+                url: book.pdfUrl,
+                method: 'GET',
+                responseType: 'stream'
+            });
 
-        res.download(book.pdfUrl);
+            // Set headers to prompt download with correct filename
+            res.setHeader('Content-Disposition', `attachment; filename="${book.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`);
+            res.setHeader('Content-Type', 'application/pdf');
+
+            response.data.pipe(res);
+        } else {
+            // Local fallback
+            if (!fs.existsSync(book.pdfUrl)) {
+                return res.status(404).json({ message: 'File not found on server' });
+            }
+            res.download(book.pdfUrl);
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
