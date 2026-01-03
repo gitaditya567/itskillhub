@@ -2,6 +2,20 @@ const Book = require('../models/Book');
 const { PDFDocument } = require('pdf-lib');
 const fs = require('fs');
 
+// Helper to convert Drive links
+const convertToDirectLink = (url, type) => {
+    if (!url || !url.includes('drive.google.com')) return url;
+    // Extract ID
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (!match) return url;
+    const id = match[1];
+
+    if (type === 'image') {
+        return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+    } else {
+        return `https://drive.google.com/uc?export=download&id=${id}`;
+    }
+};
 
 // @desc    Get all books
 // @route   GET /api/books
@@ -47,13 +61,13 @@ const createBook = async (req, res) => {
         if (req.files && req.files.coverImage) {
             coverImage = req.files.coverImage[0].path;
         } else if (req.body.coverImageUrl) {
-            coverImage = req.body.coverImageUrl;
+            coverImage = convertToDirectLink(req.body.coverImageUrl, 'image');
         }
 
         if (req.files && req.files.pdf) {
             pdfUrl = req.files.pdf[0].path;
         } else if (req.body.pdfLink) {
-            pdfUrl = req.body.pdfLink;
+            pdfUrl = convertToDirectLink(req.body.pdfLink, 'pdf');
         }
 
         // Validating basic existence
@@ -188,7 +202,7 @@ const updateBook = async (req, res) => {
             if (book.coverImage && !book.coverImage.startsWith('http') && fs.existsSync(book.coverImage)) {
                 fs.unlinkSync(book.coverImage);
             }
-            book.coverImage = req.body.coverImageUrl;
+            book.coverImage = convertToDirectLink(req.body.coverImageUrl, 'image');
         }
 
         if (req.files && req.files.pdf) {
@@ -202,7 +216,7 @@ const updateBook = async (req, res) => {
             if (book.pdfUrl && !book.pdfUrl.startsWith('http') && fs.existsSync(book.pdfUrl)) {
                 fs.unlinkSync(book.pdfUrl);
             }
-            book.pdfUrl = req.body.pdfLink;
+            book.pdfUrl = convertToDirectLink(req.body.pdfLink, 'pdf');
         }
 
         const updatedBook = await book.save();
