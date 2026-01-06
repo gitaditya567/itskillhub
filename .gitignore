@@ -1,0 +1,20 @@
+# Node
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Uploads and generated files
+uploads/
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# OS and IDE
+.DS_Store
+.vscode/
+.idea/
