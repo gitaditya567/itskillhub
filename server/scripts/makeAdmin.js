@@ -1,7 +1,9 @@
+const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const User = require('../server/models/User');
+const User = require('../models/User');
 
-dotenv.config({ path: '../server/.env' });
+const path = require('path');
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const makeAdmin = async () => {
     try {

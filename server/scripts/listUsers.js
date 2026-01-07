@@ -1,8 +1,10 @@
+const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-// Adjusted path: script is in /scripts, models are in /server/models
-const User = require('../server/models/User');
+// Adjusted path: script is in /server/scripts, models are in /server/models
+const User = require('../models/User');
 
-dotenv.config({ path: '../server/.env' });
+const path = require('path');
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const listUsers = async () => {
     try {
